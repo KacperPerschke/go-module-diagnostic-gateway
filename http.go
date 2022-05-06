@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -27,25 +29,74 @@ import (
  *
  */
 func handlerForHealthCheckers(w http.ResponseWriter, r *http.Request) {
+	globalLogger.Debug("handlerForHealth — start")
+	globalLogger.WithFields(logrus.Fields{
+		"http.request.method": r.Method,
+		"http.request.uri":    r.RequestURI,
+	}).Debug(`Internals`)
 	const healthContent = `
-    <!DOCTYPE html>
-    <html>
-        <body>
-            <p>Pocałujta w … wójta!</p>
-        </body>
-    </html>
+		<!DOCTYPE html>
+		<html>
+			<body>
+				<p>Pocałujta w … wójta!</p>
+			</body>
+		</html>
     `
 	fmt.Fprintf(w, healthContent)
+	globalLogger.Debug("handlerForHealth — stop")
 }
 
 func handlerForPing(w http.ResponseWriter, r *http.Request) {
+	globalLogger.Debug("handlerForPing — start")
 	fmt.Fprintf(w, `pong`)
+	globalLogger.Debug("handlerForPing — stop")
+}
+
+func funcForVersions(w http.ResponseWriter, r *http.Request) {
+	globalLogger.Debug("funcForVersions — start")
+	module := mux.Vars(r)["module"]
+	version := mux.Vars(r)["version"]
+	globalLogger.WithFields(logrus.Fields{
+		"http.request.params.module":  module,
+		"http.request.params.version": version,
+		"http.request.uri":            r.RequestURI,
+	}).Debug("funcForVersions — paramteres")
+	globalLogger.Debug("funcForVersions — start quering proxy")
+	resp, err := http.Get(fmt.Sprintf("https://proxy.golang.org%s", r.RequestURI))
+	globalLogger.Debug("funcForVersions — stop  quering proxy")
+	if err != nil {
+		globalLogger.Fatal(err)
+		fmt.Fprintf(w, ``)
+	} else {
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			globalLogger.Fatal(err)
+		} else {
+			w.Write(b)
+			// fmt.Fprintf(w, resp)
+		}
+	}
+	globalLogger.Debug("funcForVersions — stop")
+}
+
+func goAway(w http.ResponseWriter, r *http.Request) {
+	globalLogger.WithFields(logrus.Fields{
+		"http.request.method": r.Method,
+		"http.request.uri":    r.RequestURI,
+	}).Error(`Stupid`)
+	const goAwayContent = `
+		<!DOCTYPE html>
+		<html>
+			<body>
+				<p>Go away!</p>
+			</body>
+		</html>
+    `
+	fmt.Fprintf(w, goAwayContent)
 }
 
 func produceRouter() *mux.Router {
 	router := mux.NewRouter()
-	router.Use(loggingMiddleware)
-	globalLogger.Info("Starts preparation of http routing.")
 	router.HandleFunc(
 		"/health",
 		func(w http.ResponseWriter, r *http.Request) {
@@ -58,60 +109,7 @@ func produceRouter() *mux.Router {
 			handlerForPing(w, r)
 		},
 	)
-	globalLogger.Info("Successfully finished preparation of http routing.")
+	router.HandleFunc("/{module:.+}/@v/{version}.info", funcForVersions).Methods(http.MethodGet)
+	router.NotFoundHandler = http.HandlerFunc(goAway)
 	return router
 }
-
-/*
- * type (
- * 	// struct for holding response details
- * 	responseData struct {
- * 		status int
- * 		size   int
- * 	}
- *
- * 	// our http.ResponseWriter implementation
- * 	loggingResponseWriter struct {
- * 		http.ResponseWriter // compose original http.ResponseWriter
- * 		responseData        *responseData
- * 	}
- * )
- *
- * func (r *loggingResponseWriter) Write(b []byte) (int, error) {
- * 	size, err := r.ResponseWriter.Write(b) // write response using original http.ResponseWriter
- * 	r.responseData.size += size            // capture size
- * 	return size, err
- * }
- *
- * func (r *loggingResponseWriter) WriteHeader(statusCode int) {
- * 	r.ResponseWriter.WriteHeader(statusCode) // write status code using original http.ResponseWriter
- * 	r.responseData.status = statusCode       // capture status code
- * }
- *
- * func WithLogging(h http.Handler) http.Handler {
- * 	loggingFn := func(rw http.ResponseWriter, req *http.Request) {
- * 		start := time.Now()
- *
- * 		responseData := &responseData{
- * 			status: 0,
- * 			size:   0,
- * 		}
- * 		lrw := loggingResponseWriter{
- * 			ResponseWriter: rw, // compose original http.ResponseWriter
- * 			responseData:   responseData,
- * 		}
- * 		h.ServeHTTP(&lrw, req) // inject our implementation of http.ResponseWriter
- *
- * 		duration := time.Since(start)
- *
- * 		logrus.WithFields(logrus.Fields{
- * 			"uri":      req.RequestURI,
- * 			"method":   req.Method,
- * 			"status":   responseData.status,
- * 			"duration": duration,
- * 			"size":     responseData.size,
- * 		}).Info("request completed")
- * 	}
- * 	return http.HandlerFunc(loggingFn)
- * }
- */
