@@ -7,10 +7,6 @@ import (
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
-const (
-	logTracePath bool = false // Whether to log info about …?
-)
-
 var globalLogger *logrus.Entry
 
 func init() {
@@ -18,7 +14,7 @@ func init() {
 	logger.Level = logrus.TraceLevel
 	logger.Formatter = &prefixed.TextFormatter{
 		DisableColors:   true,
-		TimestampFormat: "2006-01-02T15:04:05.999Z07:00",
+		TimestampFormat: "2006-01-02T15:04:05.999999Z07:00",
 		FullTimestamp:   true,
 		ForceFormatting: true,
 	}

@@ -9,6 +9,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func produceRouter() *mux.Router {
+	router := mux.NewRouter()
+	router.HandleFunc("/health", handlerForHealthCheckers).Methods(http.MethodGet)
+	router.HandleFunc("/ping", handlerForPing).Methods(http.MethodGet)
+	router.HandleFunc("/{module:.+}/@v/list", funcForList).Methods(http.MethodGet)
+	router.HandleFunc("/{module:.+}/@v/{version}.info", funcForVersions).Methods(http.MethodGet)
+	router.NotFoundHandler = http.HandlerFunc(goAway)
+	return router
+}
+
 /*
  * GET $GOPROXY/<module>/@v/list returns a list of known versions of the given module, one per line.
  * router.HandleFunc("/{module:.+}/@v/{version}.info", version).Methods(http.MethodGet)
@@ -28,6 +38,7 @@ import (
  * <module>/@latest is optional and may not be implemented by a module proxy.
  *
  */
+
 func handlerForHealthCheckers(w http.ResponseWriter, r *http.Request) {
 	globalLogger.Debug("handlerForHealth — start")
 	globalLogger.WithFields(logrus.Fields{
@@ -52,30 +63,36 @@ func handlerForPing(w http.ResponseWriter, r *http.Request) {
 	globalLogger.Debug("handlerForPing — stop")
 }
 
+func callProxy(path string) ([]byte, error) {
+	globalLogger.Debug("callProxy — start quering proxy")
+	resp, err := http.Get(fmt.Sprintf("https://proxy.golang.org%s", path))
+	globalLogger.Debug("callProxy — stop  quering proxy")
+	if err != nil {
+		return []byte{}, err
+	}
+	b, err := io.ReadAll(resp.Body)
+	return b, err
+}
+
+func funcForList(w http.ResponseWriter, r *http.Request) {
+}
+
 func funcForVersions(w http.ResponseWriter, r *http.Request) {
 	globalLogger.Debug("funcForVersions — start")
-	module := mux.Vars(r)["module"]
-	version := mux.Vars(r)["version"]
-	globalLogger.WithFields(logrus.Fields{
-		"http.request.params.module":  module,
-		"http.request.params.version": version,
-		"http.request.uri":            r.RequestURI,
-	}).Debug("funcForVersions — paramteres")
-	globalLogger.Debug("funcForVersions — start quering proxy")
-	resp, err := http.Get(fmt.Sprintf("https://proxy.golang.org%s", r.RequestURI))
-	globalLogger.Debug("funcForVersions — stop  quering proxy")
+	path := r.RequestURI
+	b, err := callProxy(path)
+	w.Write(b)
 	if err != nil {
-		globalLogger.Fatal(err)
-		fmt.Fprintf(w, ``)
-	} else {
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			globalLogger.Fatal(err)
-		} else {
-			w.Write(b)
-			// fmt.Fprintf(w, resp)
-		}
+		globalLogger.WithFields(logrus.Fields{
+			"http.request.uri":    path,
+			"http.response.error": err.Error(),
+		}).Error("funcForVersions — error")
+		return
 	}
+	globalLogger.WithFields(logrus.Fields{
+		"http.request.uri":   r.RequestURI,
+		"http.response.body": string(b),
+	}).Debug("funcForVersions — success")
 	globalLogger.Debug("funcForVersions — stop")
 }
 
@@ -93,23 +110,4 @@ func goAway(w http.ResponseWriter, r *http.Request) {
 		</html>
     `
 	fmt.Fprintf(w, goAwayContent)
-}
-
-func produceRouter() *mux.Router {
-	router := mux.NewRouter()
-	router.HandleFunc(
-		"/health",
-		func(w http.ResponseWriter, r *http.Request) {
-			handlerForHealthCheckers(w, r)
-		},
-	)
-	router.HandleFunc(
-		"/ping",
-		func(w http.ResponseWriter, r *http.Request) {
-			handlerForPing(w, r)
-		},
-	)
-	router.HandleFunc("/{module:.+}/@v/{version}.info", funcForVersions).Methods(http.MethodGet)
-	router.NotFoundHandler = http.HandlerFunc(goAway)
-	return router
 }
