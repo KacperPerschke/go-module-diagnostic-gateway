@@ -50,25 +50,6 @@ func funcModuleProtocol(w http.ResponseWriter, r *http.Request) {
 	globalLogger.Debug("funcModuleProtocol — stop")
 }
 
-func funcForVersions(w http.ResponseWriter, r *http.Request) {
-	globalLogger.Debug("funcForVersions — start")
-	path := r.RequestURI
-	b, err := callProxy(path)
-	w.Write(b)
-	if err != nil {
-		globalLogger.WithFields(logrus.Fields{
-			"http.request.uri":    path,
-			"http.response.error": err.Error(),
-		}).Error("funcForVersions — error")
-		return
-	}
-	globalLogger.WithFields(logrus.Fields{
-		"http.request.uri":   r.RequestURI,
-		"http.response.body": string(b),
-	}).Debug("funcForVersions — success")
-	globalLogger.Debug("funcForVersions — stop")
-}
-
 func goAway(w http.ResponseWriter, r *http.Request) {
 	globalLogger.WithFields(logrus.Fields{
 		"http.request.method": r.Method,
