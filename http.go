@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -20,34 +19,21 @@ func produceRouter() *mux.Router {
 	return router
 }
 
-func callProxy(path string) ([]byte, error) {
-	globalLogger.Debug("callProxy — start quering proxy")
-	resp, err := http.Get(fmt.Sprintf("https://proxy.golang.org%s", path))
-	globalLogger.Debug("callProxy — stop  quering proxy")
-	if err != nil {
-		return []byte{}, err
-	}
-	b, err := io.ReadAll(resp.Body)
-	return b, err
-}
-
 func funcModuleProtocol(w http.ResponseWriter, r *http.Request) {
-	globalLogger.Debug("funcModuleProtocol — start")
 	path := r.RequestURI
-	b, err := callProxy(path)
-	w.Write(b)
+	resp, err := callProxy(path)
+	w.Write(resp.Payload)
 	if err != nil {
 		globalLogger.WithFields(logrus.Fields{
 			"http.request.uri":    path,
 			"http.response.error": err.Error(),
-		}).Error("funcForVersions — error")
+		}).Error(``)
 		return
 	}
 	globalLogger.WithFields(logrus.Fields{
 		"http.request.uri":   r.RequestURI,
-		"http.response.body": string(b),
-	}).Debug("funcForVersions — success")
-	globalLogger.Debug("funcModuleProtocol — stop")
+		"http.response.body": resp.toLog(),
+	}).Debug(``)
 }
 
 func goAway(w http.ResponseWriter, r *http.Request) {
