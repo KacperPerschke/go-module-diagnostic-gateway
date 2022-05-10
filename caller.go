@@ -12,9 +12,9 @@ type myRespType struct {
 	ContentType string
 }
 
-func callProxy(path string) (myRespType, error) {
+func callWorld(host string, path string) (myRespType, error) {
 	var myResp myRespType
-	resp, err := http.Get(fmt.Sprintf("https://proxy.golang.org%s", path))
+	resp, err := http.Get(fmt.Sprintf("https://%s%s", host, path))
 	defer resp.Body.Close()
 	if err != nil {
 		return myResp, err
