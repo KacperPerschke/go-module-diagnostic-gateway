@@ -37,8 +37,10 @@ func funcModuleProtocol(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	globalLogger.WithFields(logrus.Fields{
-		"http.request.uri":   r.RequestURI,
-		"http.response.body": resp.toLog(),
+		"http.request.uri":           r.RequestURI,
+		"http.response.body":         resp.toLog(),
+		"http.response.status":       resp.StatusCode,
+		"http.response.Content-Type": resp.Header.Get("Content-Type"),
 	}).Debug(``)
 }
 
@@ -64,8 +66,10 @@ func funcSUMDBProtocol(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	globalLogger.WithFields(logrus.Fields{
-		"http.request.uri":   r.RequestURI,
-		"http.response.body": resp.toLog(),
+		"http.request.uri":           r.RequestURI,
+		"http.response.body":         resp.toLog(),
+		"http.response.status":       resp.StatusCode,
+		"http.response.Content-Type": resp.Header.Get("Content-Type"),
 	}).Debug(``)
 }
 
