@@ -36,11 +36,15 @@ func funcModuleProtocol(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
+	respContentType := resp.Header.Get("Content-Type")
+	if respContentType == "application/zip" {
+		resp.LogAsBase64 = true
+	}
 	globalLogger.WithFields(logrus.Fields{
 		"http.request.uri":           r.RequestURI,
 		"http.response.body":         resp.toLog(),
 		"http.response.status":       resp.StatusCode,
-		"http.response.Content-Type": resp.Header.Get("Content-Type"),
+		"http.response.Content-Type": respContentType,
 	}).Debug(``)
 }
 
@@ -64,6 +68,9 @@ func funcSUMDBProtocol(w http.ResponseWriter, r *http.Request) {
 		}).Error(``)
 		w.WriteHeader(http.StatusBadGateway)
 		return
+	}
+	if strings.Contains(r.RequestURI, `tile`) {
+		resp.LogAsBase64 = true
 	}
 	globalLogger.WithFields(logrus.Fields{
 		"http.request.uri":           r.RequestURI,
