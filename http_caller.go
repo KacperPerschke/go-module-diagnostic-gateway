@@ -18,14 +18,14 @@ type myRespType struct {
 }
 
 func callWorld(host string, path string) (myRespType, error) {
-	resp, err := http.Get(fmt.Sprintf("https://%s%s", host, path))
-	defer resp.Body.Close()
+	resp, err := http.Get(fmt.Sprintf("%s%s", host, path))
 	if err != nil {
 		return myRespType{}, err
 	}
+	defer resp.Body.Close()
 	b, err := io.ReadAll(resp.Body)
 	myResp := myRespType{
-		Header:      resp.Header,
+		Header:      resp.Header.Clone(),
 		Payload:     b,
 		Status:      resp.Status,
 		StatusCode:  resp.StatusCode,
@@ -34,9 +34,17 @@ func callWorld(host string, path string) (myRespType, error) {
 	return myResp, err
 }
 
-func (r myRespType) toLog() string {
-	if r.LogAsBase64 {
+func (r myRespType) toLog(logAsBase64 bool) string {
+	if logAsBase64 {
 		return base64.StdEncoding.EncodeToString(r.Payload)
 	}
 	return string(r.Payload)
+}
+
+func (r myRespType) copyHeadersTo(w http.ResponseWriter) {
+	for n, values := range r.Header {
+		for _, v := range values {
+			w.Header().Add(n, v)
+		}
+	}
 }

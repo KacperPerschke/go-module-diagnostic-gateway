@@ -24,10 +24,12 @@ func produceRouter() *mux.Router {
 }
 
 func funcModuleProtocol(w http.ResponseWriter, r *http.Request) {
-	host := `proxy.golang.org`
+	host := globalConfig.getModuleProxies()[0] //awwwfull
 	path := r.RequestURI
 	resp, err := callWorld(host, path)
 	w.Write(resp.Payload)
+	resp.copyHeadersTo(w)
+	w.WriteHeader(resp.StatusCode)
 	if err != nil {
 		globalLogger.WithFields(logrus.Fields{
 			"http.request.uri":    path,
@@ -37,12 +39,10 @@ func funcModuleProtocol(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respContentType := resp.Header.Get("Content-Type")
-	if respContentType == "application/zip" {
-		resp.LogAsBase64 = true
-	}
+	logAsBase64 := bool(respContentType == "application/zip")
 	globalLogger.WithFields(logrus.Fields{
 		"http.request.uri":           r.RequestURI,
-		"http.response.body":         resp.toLog(),
+		"http.response.body":         resp.toLog(logAsBase64),
 		"http.response.status":       resp.StatusCode,
 		"http.response.Content-Type": respContentType,
 	}).Debug(``)
@@ -57,10 +57,12 @@ func funcSUMDBWelcome(w http.ResponseWriter, r *http.Request) {
 }
 
 func funcSUMDBProtocol(w http.ResponseWriter, r *http.Request) {
-	host := `sum.golang.org`
+	host := globalConfig.getSumDBProxies()[0] // awwfull
 	path := strings.TrimPrefix(r.RequestURI, `/sumdb/sum.golang.org`)
 	resp, err := callWorld(host, path)
 	w.Write(resp.Payload)
+	resp.copyHeadersTo(w)
+	w.WriteHeader(resp.StatusCode)
 	if err != nil {
 		globalLogger.WithFields(logrus.Fields{
 			"http.request.uri":    path,
@@ -69,12 +71,10 @@ func funcSUMDBProtocol(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
 		return
 	}
-	if strings.Contains(r.RequestURI, `tile`) {
-		resp.LogAsBase64 = true
-	}
+	logAsBase64 := strings.Contains(r.RequestURI, `tile`)
 	globalLogger.WithFields(logrus.Fields{
 		"http.request.uri":           r.RequestURI,
-		"http.response.body":         resp.toLog(),
+		"http.response.body":         resp.toLog(logAsBase64),
 		"http.response.status":       resp.StatusCode,
 		"http.response.Content-Type": resp.Header.Get("Content-Type"),
 	}).Debug(``)

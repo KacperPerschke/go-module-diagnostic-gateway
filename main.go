@@ -1,20 +1,25 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
+
+	pflag "github.com/spf13/pflag"
 )
 
 func main() {
+	var configFilePath string
 	var listenPort string
 
-	flag.StringVar(&listenPort, "listen-addr", "5000", "server listen address")
-	flag.Parse()
+	pflag.StringVarP(&configFilePath, "config-file", "c", "./default-config.yaml", "path to the file containing configuration")
+	pflag.StringVarP(&listenPort, "listen-addr", "p", "5000", "server listen address")
+	pflag.Parse()
 
-	addr := fmt.Sprintf(":%s", listenPort)
-	globalLogger.WithField("addr", addr).Info("starting server")
-	if err := http.ListenAndServe(addr, produceRouter()); err != nil {
-		globalLogger.WithField("event", "start server").Fatal(err)
+	globalConfig = produceConfiguration(configFilePath)
+
+	serverAddress := fmt.Sprintf(":%s", listenPort)
+	globalLogger.WithField("serverAddress", serverAddress).Info("starting server")
+	if err := http.ListenAndServe(serverAddress, produceRouter()); err != nil {
+		globalLogger.WithField("event", "stopping server").Fatal(err)
 	}
 }
