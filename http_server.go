@@ -27,9 +27,9 @@ func funcModuleProtocol(w http.ResponseWriter, r *http.Request) {
 	host := globalConfig.getModuleProxies()[0] //awwwfull
 	path := r.RequestURI
 	resp, err := callWorld(host, path)
-	w.Write(resp.Payload)
 	resp.copyHeadersTo(w)
 	w.WriteHeader(resp.StatusCode)
+	w.Write(resp.Payload)
 	if err != nil {
 		globalLogger.WithFields(logrus.Fields{
 			"http.request.uri":    path,
@@ -60,9 +60,9 @@ func funcSUMDBProtocol(w http.ResponseWriter, r *http.Request) {
 	host := globalConfig.getSumDBProxies()[0] // awwfull
 	path := strings.TrimPrefix(r.RequestURI, `/sumdb/sum.golang.org`)
 	resp, err := callWorld(host, path)
-	w.Write(resp.Payload)
 	resp.copyHeadersTo(w)
 	w.WriteHeader(resp.StatusCode)
+	w.Write(resp.Payload)
 	if err != nil {
 		globalLogger.WithFields(logrus.Fields{
 			"http.request.uri":    path,
