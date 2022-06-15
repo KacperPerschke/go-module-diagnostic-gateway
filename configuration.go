@@ -29,7 +29,19 @@ func (c configStructure) getSumDBProxies() listOfHosts {
 
 func listModuleProxies(confReadIn *viper.Viper) listOfHosts {
 	urlsUnverified := confReadIn.GetStringSlice(`module_proxies`)
-	return urlsUnverified
+	globalLogger.WithFields(logrus.Fields{
+		`list of proposed module proxies`: urlsUnverified,
+	}).Info("Parsed Module Proxies configuration")
+	urlsVerified := []string{}
+	for _, host := range urlsUnverified {
+		if verifyModuleProxy(host) {
+			urlsVerified = append(urlsVerified, host)
+		}
+	}
+	globalLogger.WithFields(logrus.Fields{
+		`list of verified sumdb proxies`: urlsVerified,
+	}).Info("Parsed SumDB Proxies configuration")
+	return urlsVerified
 }
 
 func listSumDBProxies(confReadIn *viper.Viper) listOfHosts {
@@ -39,7 +51,19 @@ func listSumDBProxies(confReadIn *viper.Viper) listOfHosts {
 		urlsToModProxs := confReadIn.GetStringSlice(`module_proxies`)
 		urlsUnverified = append(urlsUnverified, urlsToModProxs...)
 	}
-	return urlsUnverified
+	globalLogger.WithFields(logrus.Fields{
+		`list of proposed sumdb proxies`: urlsUnverified,
+	}).Info("Parsed SumDB Proxies configuration")
+	urlsVerified := []string{}
+	for _, host := range urlsUnverified {
+		if verifySumDBProxy(host) {
+			urlsVerified = append(urlsVerified, host)
+		}
+	}
+	globalLogger.WithFields(logrus.Fields{
+		`list of verified sumdb proxies`: urlsVerified,
+	}).Info("Parsed SumDB Proxies configuration")
+	return urlsVerified
 }
 
 func produceConfiguration(confFilePath string) configInterface {

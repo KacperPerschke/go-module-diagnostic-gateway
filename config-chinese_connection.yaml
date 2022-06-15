@@ -1,0 +1,12 @@
+--- 
+inspirations: 
+  - "https://en.wikipedia.org/wiki/The_French_Connection_(film)"
+  - "https://en.wikipedia.org/wiki/Revenge_of_the_Pink_Panther"
+module_proxies: 
+  - "https://proxy.golang.org"
+  - "https://goproxy.io/"
+  - "https://goproxy.cn/"
+  - "https://goproxy.baidu.com/"
+sumdb_proxies: 
+  - "https://sum.golang.org"
+use_module_proxies_as_sumdb_also: false

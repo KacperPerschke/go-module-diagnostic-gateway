@@ -11,7 +11,7 @@ func main() {
 	var configFilePath string
 	var listenPort string
 
-	pflag.StringVarP(&configFilePath, "config-file", "c", "./default-config.yaml", "path to the file containing configuration")
+	pflag.StringVarP(&configFilePath, "config-file", "c", "./config-default.yaml", "path to the file containing configuration")
 	pflag.StringVarP(&listenPort, "listen-addr", "p", "5000", "server listen address")
 	pflag.Parse()
 

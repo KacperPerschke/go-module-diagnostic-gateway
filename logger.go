@@ -51,9 +51,9 @@ func (f *LogFormat) Format(entry *logrus.Entry) ([]byte, error) {
 		const payloadKey = `http.response.body`
 		for key, value := range entry.Data {
 			if key == payloadKey {
-				fmt.Fprintf(b, "— %s=↓ below ↓\n%s\n—%s=↑ above ↑", payloadKey, value, payloadKey)
+				fmt.Fprintf(b, " ‣ %s = ↓ below ↓\n%s\n ‣ %s = ↑ above ↑", payloadKey, value, payloadKey)
 			} else {
-				fmt.Fprintf(b, "— %s=", key)
+				fmt.Fprintf(b, " ‣ %s = ", key)
 				fmt.Fprint(b, value)
 
 			}

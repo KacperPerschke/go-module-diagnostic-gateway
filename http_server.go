@@ -24,28 +24,18 @@ func produceRouter() *mux.Router {
 }
 
 func funcModuleProtocol(w http.ResponseWriter, r *http.Request) {
-	host := globalConfig.getModuleProxies()[0] //awwwfull
 	path := r.RequestURI
-	resp, err := callWorld(host, path)
-	resp.copyHeadersTo(w)
-	w.WriteHeader(resp.StatusCode)
-	w.Write(resp.Payload)
-	if err != nil {
-		globalLogger.WithFields(logrus.Fields{
-			"http.request.uri":    path,
-			"http.response.error": err.Error(),
-		}).Error(``)
-		w.WriteHeader(http.StatusBadGateway)
-		return
+	for _, host := range globalConfig.getModuleProxies() {
+		resp, err := helperForModuleProtocol(host, path)
+		if err == nil {
+			resp.copyHeadersTo(w)
+			w.WriteHeader(resp.StatusCode)
+			w.Write(resp.Payload)
+			return
+		}
 	}
-	respContentType := resp.Header.Get("Content-Type")
-	logAsBase64 := bool(respContentType == "application/zip")
-	globalLogger.WithFields(logrus.Fields{
-		"http.request.uri":           r.RequestURI,
-		"http.response.body":         resp.toLog(logAsBase64),
-		"http.response.status":       resp.StatusCode,
-		"http.response.Content-Type": respContentType,
-	}).Debug(``)
+	w.WriteHeader(http.StatusBadGateway)
+	return
 }
 
 func funcSUMDBWelcome(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +49,8 @@ func funcSUMDBWelcome(w http.ResponseWriter, r *http.Request) {
 func funcSUMDBProtocol(w http.ResponseWriter, r *http.Request) {
 	host := globalConfig.getSumDBProxies()[0] // awwfull
 	path := strings.TrimPrefix(r.RequestURI, `/sumdb/sum.golang.org`)
-	resp, err := callWorld(host, path)
+	uri := fmt.Sprintf("%s/%s", host, path)
+	resp, err := callWorld(uri)
 	resp.copyHeadersTo(w)
 	w.WriteHeader(resp.StatusCode)
 	w.Write(resp.Payload)

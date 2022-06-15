@@ -1,0 +1,6 @@
+--- 
+module_proxies: 
+  - "https://proxy.golang.org"
+sumdb_proxies: 
+  - "https://sum.golang.org"
+use_module_proxies_as_sumdb_also: true
