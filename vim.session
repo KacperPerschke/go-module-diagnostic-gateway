@@ -1,4 +1,6 @@
 edit +0 main.go
+badd +0 configuration.go
+badd +0 helper.go
+badd +0 http_caller.go
+badd +0 http_server.go
 badd +0 logger.go
-badd +0 http.go
-badd +0 caller.go
